@@ -1,0 +1,13 @@
+.active > div {
+    @apply text-primary bg-gray-100 fill-primary;
+}
+
+.active > div > svg {
+    @apply !fill-primary;
+}
+
+.nav-link > div {
+    @apply p-2 hover:bg-gray-200 group-hover:text-primary fill-secondary rounded-lg;
+}
+
+
