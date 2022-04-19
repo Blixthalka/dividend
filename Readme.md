@@ -4,6 +4,7 @@ Funkar på
 - java 16
 - npm 8.4.0
 - node v14.17.5
+- Gradle 7.4.2
 
 1. Ladda hem en transaktionsfil från avanza
 2. Byt ut static path mot den jag har i koden i AvanzaReader.java
