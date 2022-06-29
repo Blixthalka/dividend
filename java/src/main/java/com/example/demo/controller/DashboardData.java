@@ -14,6 +14,5 @@ public class DashboardData {
     BigDecimal totalDividends;
     BigDecimal dividendsThisYear;
     BigDecimal monthlyDividends;
-    List<Month> monthsCurrentYear;
-    List<Month> monthsLastYear;
+    BigDecimal numberOfDividends;
 }

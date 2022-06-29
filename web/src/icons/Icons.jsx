@@ -5,6 +5,9 @@ import { ReactComponent as TransactionSvg } from './svg/transaction.svg';
 import { ReactComponent as InstrumentSvg } from './svg/instrument.svg';
 import { ReactComponent as LogoSvg } from './svg/logo.svg';
 import { ReactComponent as ChevronDownSvg } from './svg/chevron-down.svg';
+import { ReactComponent as ChevronLeftSvg } from './svg/chevron-left.svg';
+import { ReactComponent as ChevronRightSvg } from './svg/chevron-right.svg';
+import { ReactComponent as ChevronUpSvg } from './svg/chevron-up.svg';
 import { ReactComponent as AddSvg } from './svg/add.svg';
 import { ReactComponent as CloseSvg } from './svg/close.svg';
 import { ReactComponent as MinusSvg } from './svg/minus.svg';
@@ -14,6 +17,37 @@ import { ReactComponent as UsSvg } from './svg/flags/us.svg';
 import { ReactComponent as EuSvg } from './svg/flags/eu.svg';
 import { ReactComponent as TradeSvg } from './svg/trade.svg';
 import { ReactComponent as UploadSvg } from './svg/upload.svg';
+import { ReactComponent as CrossSvg } from './svg/cross.svg';
+import { ReactComponent as MenuSvg } from './svg/menu.svg';
+import { ReactComponent as BarChartSvg } from './svg/bar-chart.svg';
+import { ReactComponent as PieChartSvg } from './svg/pie-chart.svg';
+import { ReactComponent as BarSortedChartSvg } from './svg/bar-sorted-chart.svg';
+
+
+
+
+export const PieChartIcon = ({ className }) => {
+    return (<PieChartSvg className={`${className}`} />)
+}
+
+
+export const BarSortedChartIcon = ({ className }) => {
+    return (<BarSortedChartSvg className={`${className}`} />)
+}
+
+
+export const BarChartIcon = ({ className }) => {
+    return (<BarChartSvg className={`${className}`} />)
+}
+
+
+export const MenuIcon = ({ className }) => {
+    return (<MenuSvg className={`${className}`} />)
+}
+
+export const CrossIcon = ({ className }) => {
+    return (<CrossSvg className={`${className}`} />)
+}
 
 export const Unlock = ({ className }) => {
     return (<UnlockSvg className={`w-4 h-4 ${className}`} />)
@@ -27,7 +61,7 @@ export const UploadIcon = ({ className }) => {
 }
 
 export const PortfolioIcon = ({ className }) => {
-    return (<PortfolioSvg className={`w-5 h-5 ${className}`} />)
+    return (<PortfolioSvg className={`${className}`} />)
 }
 
 export const TransactionIcon = ({ className }) => {
@@ -44,6 +78,18 @@ export const LogoIcon = ({ className }) => {
 
 export const ChevronDownIcon = ({ className }) => {
     return (<ChevronDownSvg className={`w-5 h-5 ${className}`} />)
+}
+
+export const ChevronLeftIcon = ({ className }) => {
+    return (<ChevronLeftSvg className={`w-5 h-5 ${className}`} />)
+}
+
+export const ChevronRightIcon = ({ className }) => {
+    return (<ChevronRightSvg className={`w-5 h-5 ${className}`} />)
+}
+
+export const ChevronUpIcon = ({ className }) => {
+    return (<ChevronUpSvg className={`w-5 h-5 ${className}`} />)
 }
 
 export const AddIcon = ({ className }) => {

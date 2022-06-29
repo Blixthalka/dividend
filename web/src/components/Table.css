@@ -1,0 +1,46 @@
+
+
+.dividends-table {
+    @apply pt-20 pb-1 w-full mx-auto;
+}
+
+.dividends-table th {
+    @apply text-sm font-normal bg-neutral-100 text-primary p-3 text-left cursor-pointer border border-neutral-300;
+}
+
+.dividends-table .number {
+    font-variant-numeric: tabular-nums;
+    @apply text-right;
+}
+
+.dividends-table .text {
+    @apply text-left;
+}
+
+.dividends-table td {
+    @apply text-neutral-500 text-sm px-3 py-1 border border-neutral-300;
+}
+
+.dividends-table .empty-td {
+    @apply text-center py-5;
+}
+
+.dividends-table tbody {
+    @apply w-full;
+}
+
+.dividends-table tbody {
+    @apply border-b border-r border-l border-neutral-300;
+}
+
+.dividends-table thead {
+    @apply border-t border-r border-l border-neutral-300;
+}
+
+.dividends-table tbody tr:nth-child(even) {
+    @apply bg-neutral-100;
+}
+
+.dividends-table .header-highlight {
+    @apply bg-neutral-200 ;
+}

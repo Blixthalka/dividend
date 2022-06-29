@@ -1,12 +1,42 @@
-import { Tooltip } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
+import Table from './Table';
 
-const IntrumentCard = ({ numberOfInstruments }) => {
+const IntrumentCard = ({ numberOfInstruments, year }) => {
     const [instruments, setInstruments] = useState([]);
+    const headers = [
+        {
+            name: "Instrument",
+            type: "text",
+            f: t => t.name
+        },
+        {
+            name: "ISIN",
+            type: "number",
+            f: t => t.isin
+        },
+        {
+            name: "Total Dividends",
+            type: "number",
+            f: t => t.totalDividends + ' kr'
+        }
+    ]
+    const [sorting, setSorting] = useState({
+        column: headers[2].name,
+        direction: "desc"
+    });
+
+
 
     useEffect(() => {
-        fetch("/api/instruments")
+        let url = null;
+        if (year != undefined) {
+            url = `/api/instruments/?year=${year}`
+        } else {
+            url = "/api/instruments"
+        }
+
+        fetch(url)
             .then(i => i.json())
             .then(i => {
                 if (numberOfInstruments === 0) {
@@ -14,23 +44,17 @@ const IntrumentCard = ({ numberOfInstruments }) => {
                 } else {
                     setInstruments(i.slice(0, numberOfInstruments))
                 }
-
             })
-    }, [])
+    }, [year, sorting])
 
     return (
         <Card title={numberOfInstruments === 0 ? "Instruments" : "Best Instruments"} className="grid gap-2 col-span-3">
-            {instruments.map((instrument) => (
-                <div className="p-2 px-5 flex items-center w-full rounded bg-gray-100 justify-between text-primary ">
-
-                    <div>
-                        <p className="text-lg">{instrument.name}</p>
-                        <p className="text-secondary text-sm tabular-nums ">{instrument.isin}</p>
-                    </div>
-                    <span className="text-lg font-bold tabular-nums text-right">{instrument.totalDividends + ' SEK'}</span>
-
-                </div>
-            ))}
+           <Table
+                    headers={headers}
+                    sorting={sorting}
+                    dataList={instruments}
+                    onSortChange={(s) => setSorting(s)}
+                />
         </Card>
 
     );

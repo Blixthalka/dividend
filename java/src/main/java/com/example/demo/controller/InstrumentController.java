@@ -3,13 +3,10 @@ package com.example.demo.controller;
 import com.example.demo.controller.dto.*;
 import com.example.demo.data.AvanzaReader;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
@@ -38,8 +35,15 @@ public class InstrumentController {
     }
 
     @GetMapping("/instruments")
-    public List<DividendInstrument> getInstrument() {
-        return groupBy(personalDividends, PersonalDividend::getIsin)
+    public List<DividendInstrument> getInstrument(@RequestParam(required = false) Integer year) {
+        List<PersonalDividend> personalDividends1 = personalDividends.stream()
+                .filter(d -> {
+                    if(year == null) {
+                        return true;
+                    }
+                    return d.getDate().getYear() == year;
+                }).collect(Collectors.toList());
+        return groupBy(personalDividends1, PersonalDividend::getIsin)
                 .filter(entry -> !entry.getKey().equals("-"))
                 .map(entry -> {
                     BigDecimal total = entry.getValue().stream()
@@ -64,14 +68,6 @@ public class InstrumentController {
         return instruments.get(instrumentId);
     }
 
-    @PostMapping("/instruments/{instrumentId}/dividends")
-    public Dividend createDividend(@PathVariable Long instrumentId, @RequestBody Dividend dividend) {
-        var id = genId(dividends.keySet());
-        dividend.setId(id);
-        dividend.setInstrumentId(instrumentId);
-        dividends.put(dividend.getId(), dividend);
-        return dividend;
-    }
 
     @GetMapping("/instruments/{instrumentId}/dividends")
     public List<Dividend> getDividends(@PathVariable Long instrumentId) {
@@ -181,11 +177,19 @@ public class InstrumentController {
         return new YearData(years);
     }
 
-    @GetMapping("/dashboard")
-    public DashboardData getDashboardData() {
+    @GetMapping(value = {"/dashboard", "/dashboard/{year}"})
+    public DashboardData getDashboardData(@PathVariable(required = false) Integer year) {
+
+        int currentYear;
+
+        if (year == null) {
+            currentYear = LocalDate.now().getYear();
+        } else {
+            currentYear = year;
+        }
 
         BigDecimal thisYear = personalDividends.stream()
-                .filter(dividend -> dividend.getDate().getYear() == LocalDate.now().getYear())
+                .filter(dividend -> dividend.getDate().getYear() == currentYear)
                 .map(PersonalDividend::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(0, RoundingMode.HALF_UP);
@@ -195,29 +199,29 @@ public class InstrumentController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(0, RoundingMode.HALF_UP);
 
-        BigDecimal monthly = personalDividends.stream()
-                .filter(dividend -> dividend.getDate().isAfter(LocalDate.now().minusMonths(12)))
-                .map(PersonalDividend::getTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(BigDecimal.valueOf(12), 0, RoundingMode.HALF_UP);
+        BigDecimal monthly = thisYear
+                .divide(getMonths(currentYear), 0, RoundingMode.HALF_UP);
 
-        ArrayList<Month> currentYear = new ArrayList<>();
-        ArrayList<Month> lastYear = new ArrayList<>();
-        int year1 = 2020; //LocalDate.now().getYear();
-        int year2 = year1 - 1;
-        for (int i = 1; i <= 12; i++) {
-            currentYear.add(new Month(i, getSumForMonth(i, year1)));
-            lastYear.add(new Month(i, getSumForMonth(i, year2)));
-        }
+        BigDecimal number = personalDividends.stream()
+                .filter(dividend -> dividend.getDate().getYear() == currentYear)
+                .map(t -> BigDecimal.ONE)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return DashboardData.builder()
                 .dividends(personalDividends)
                 .dividendsThisYear(thisYear)
                 .totalDividends(total)
                 .monthlyDividends(monthly)
-                .monthsCurrentYear(currentYear)
-                .monthsLastYear(lastYear)
+                .numberOfDividends(number)
                 .build();
+    }
+
+    public BigDecimal getMonths(int year) {
+        if (year == LocalDate.now().getYear()) {
+            return BigDecimal.valueOf(LocalDate.now().getMonth().getValue());
+        } else {
+            return new BigDecimal("12");
+        }
     }
 
 
@@ -247,16 +251,58 @@ public class InstrumentController {
 
 
     @GetMapping("/transactions")
-    public List<PersonalDividend> getTransactions() {
+    public List<PersonalDividend> getTransactions(
+            @RequestParam(required = false, defaultValue = "asc") SortDirection sortDirection,
+            @RequestParam(required = false, defaultValue = "date") DividendColumn sortColumn,
+            @RequestParam(required = false) String search
+    ) {
         List<PersonalDividend> list = personalDividends.stream()
                 .peek(d -> {
                     d.setTotalAmount(d.totalAmount.setScale(0, RoundingMode.HALF_UP));
                     d.setAmount(d.amount.setScale(2, RoundingMode.HALF_UP));
                 })
-                .sorted(Comparator.comparing(PersonalDividend::getDate))
+                .filter(d -> {
+                    if (search == null ) {
+                        return true;
+                    }
+                    String trimmedSearch = search.trim().toLowerCase();
+                    if (trimmedSearch.isEmpty()) {
+                        return true;
+                    }
+                    return d.getInstrumentName().toLowerCase().contains(trimmedSearch) || d.getIsin().toLowerCase().equals(trimmedSearch);
+                })
+                .sorted(getSortFun(sortColumn))
                 .collect(Collectors.toList());
-        Collections.reverse(list);
+        if (sortDirection == SortDirection.desc) {
+            Collections.reverse(list);
+        }
         return list;
+    }
+
+    private Comparator<PersonalDividend> getSortFun(DividendColumn column) {
+        switch (column) {
+            case instrument:
+                return Comparator.comparing(PersonalDividend::getInstrumentName, String.CASE_INSENSITIVE_ORDER);
+            case isin:
+                return Comparator.comparing(PersonalDividend::getIsin, String.CASE_INSENSITIVE_ORDER);
+            case date:
+                return Comparator.comparing(PersonalDividend::getDate);
+            case amount:
+                return Comparator.comparing(PersonalDividend::getTotalAmount);
+            default:
+                throw new RuntimeException("Could not find sort fun " + column);
+        }
+    }
+
+    private enum DividendColumn {
+        instrument,
+        isin,
+        date,
+        amount
+    }
+    private enum SortDirection {
+        asc,
+        desc
     }
 
 

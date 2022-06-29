@@ -19,8 +19,8 @@ public class AvanzaReader {
 
 
     public List<PersonalDividend> read() {
-        File file = new File("/Users/emil/Downloads/transaktioner_2018-01-01_2022-04-09.csv");
-        //File file = new File("/Users/emil/Downloads/transaktioner_2021-03-05_2022-03-05.csv");
+        //File file = new File("/Users/emil/Downloads/transaktioner_2017-01-01_2022-05-16.csv");
+        File file = new File("/Users/emil/Downloads/transaktioner_2004-01-30_2022-03-01.csv");
         //File file = new File("/Users/emil/Downloads/transaktioner_2017-01-01_2022-03-03.csv");
         return readCsvFile(file).stream()
                 .filter(line -> line.get("Typ av transaktion").equals("Utdelning"))

@@ -11,7 +11,7 @@ function Dashboard() {
 
 
   useEffect(() => {
-    fetch("/api/dashboard")
+    fetch("/api/dashboard/")
       .then(i => i.json())
       .then(i => {
         setData(i)
@@ -19,16 +19,17 @@ function Dashboard() {
   }, [])
 
   return (
-    <div className="max-w-4xl pt-5 pb-20 mx-auto">
+    <div className="max-w-4xl pb-20 mx-auto">
       <div className="grid grid-cols-3 gap-5 ">
 
         <CardSingleNumber title={"2022"} amount={data?.dividendsThisYear} currency={"SEK"} />
         <CardSingleNumber title={"Total"} amount={data?.totalDividends} currency={"SEK"} />
         <CardSingleNumber title={"Per Month"} amount={data?.monthlyDividends} currency={"SEK"} />
-        <AccumCard />
-        <DividendYearCard />
-        <InstrumentCard numberOfInstruments={5}/>
 
+        <DividendYearCard />
+        <AccumCard />
+
+        <InstrumentCard numberOfInstruments={5}/>
       </div>
 
     </div>

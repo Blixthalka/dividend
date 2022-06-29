@@ -1,39 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card'
-import Button from '../components/Button'
+import Table from '../components/Table'
+import { ChevronDownIcon, ChevronUpIcon } from '../icons/Icons';
 
 function Dividends() {
     const [transactions, setTransactions] = useState([]);
 
-    useEffect(() => {
-        fetch("/api/transactions")
-            .then(t => t.json())
-            .then(t => {
-                setTransactions(t)
-            })
-    }, [])
+    const [search, setSearch] = useState("")
 
-    const amountFormat = new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 2
+    const headers = [
+        {
+            name: "Instrument",
+            type: "text",
+            f: t => t.instrumentName
+        },
+        {
+            name: "ISIN",
+            type: "number",
+            f: t => t.isin
+        },
+        {
+            name: "Date",
+            type: "number",
+            f: t => t.date
+        },
+        {
+            name: "Amount",
+            type: "number",
+            f: t => t.totalAmount + ' kr'
+        }
+    ]
+    const [sorting, setSorting] = useState({
+        column: headers[2].name,
+        direction: "desc"
     })
 
+    useEffect(() => {
+        fetch(`/api/transactions/?sortDirection=${sorting.direction}&sortColumn=${sorting.column.toLocaleLowerCase()}&search=${search}`)
+            .then(resp => {
+                if(!resp.ok) {
+                    return [];
+                }
+                return resp.json()
+            })
+            .then(resp => {
+                setTransactions(resp)
+            })
+    }, [sorting, search])
+
+
     return (
-        <div className="grid gap-5 max-w-4xl py-5 mx-auto">
-            <Card title={"Dividends"} className="grid gap-2">
-                <div className="grid">
-                    {transactions.map((transaction) => (
-                        <div className="bg-gray-100 rounded p-2 px-5 my-2 text-primary flex space-x-5  justify-between items-center w-full">
-
-                            <div className="">
-                                <p className="text-lg">{transaction?.instrumentName}</p>
-                                <p className="tabular-nums text-sm text-zinc-400">{transaction.date + ' // ' + transaction.shares + ' x ' + amountFormat.format(transaction.amount)+ ' ' + transaction.currency}</p>
-                            </div>
-                            <p className="text-lg font-bold tabular-nums ">{transaction.totalAmount + ' ' + transaction.currency}</p>
-
-                        </div>
-                    ))}
+        <div className="max-w-4xl mx-auto pb-20">
+            <Card title={"Dividends"}>
+                <div className="my-5">
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        className="border text-sm border-neutral-200 px-3 text-primary py-2 rounded"
+                        onChange={evt => setSearch(evt.target.value)}
+                        value={search}>
+                    </input>
                 </div>
 
+                <Table
+                    headers={headers}
+                    sorting={sorting}
+                    dataList={transactions}
+                    onSortChange={(s) => setSorting(s)}
+                />
             </Card>
         </div>
     );

@@ -1,21 +1,18 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet } from "react-router-dom";
-import { DashboardIcon, PortfolioIcon, TransactionIcon, InstrumentIcon, LogoIcon, UploadIcon } from './icons/Icons'
+import { DashboardIcon, PortfolioIcon, TransactionIcon, InstrumentIcon, LogoIcon, UploadIcon, MenuIcon, CrossIcon } from './icons/Icons'
 import './app.css'
+import ButtonIcon from './components/ButtonIcon';
 
 function Instrument() {
-
+    const [showMenu, setShowMenu] = useState(false);
+    const buttonRef = useRef(null)
     const iconClass = "fill-secondary group-hover:fill-primary"
     const navs = [
         {
             name: "Dashboard",
             link: "/",
             icon: <DashboardIcon className={iconClass} />
-        },
-        {
-            name: "Portfolio",
-            link: "/portfolio",
-            icon: <PortfolioIcon className={iconClass} />
         },
         {
             name: "Instruments",
@@ -32,34 +29,42 @@ function Instrument() {
             link: "/upload",
             icon: <UploadIcon className={iconClass} />
         },
-
     ]
 
     return (
-        <div className=" bg-slate-50">
-            <div className="flex">
-                <div className="flex-grow-0 border-r bg-white ">
-                    <div className="flex justify-center py-20">
-                        <LogoIcon className="fill-primary" />
-                    </div>
-                    <nav className="p-5 grid gap-2">
+        <div className="bg-neutral-50 min-h-screen">
+            <div className="border-b bg-white px-5">
+                <div className="max-w-4xl mx-auto py-2 flex justify-between ">
+                    <NavLink to="/">
+                        <ButtonIcon Icon={PortfolioIcon} />
+                    </NavLink>
+                    <ButtonIcon onClick={(e) => setShowMenu(true)} Icon={MenuIcon} />
+                </div>
+            </div>
+
+            <div className="pt-5 pb-20 px-5">
+                <Outlet />
+            </div>
+
+            {showMenu &&
+                <nav className="absolute top-0 right-0 bg-white w-full h-full">
+                    <div className="max-w-2xl mx-auto pt-20 flex flex-col space-y-2 px-5 ">
+
+                        <ButtonIcon Icon={CrossIcon} onClick={(e) => setShowMenu(false)} className="place-self-end" />
                         {navs.map((nav) => (
                             <NavLink
                                 to={nav.link}
                                 className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+                                onClick={(e) => setShowMenu(false)}
                             >
                                 <div className="flex items-center space-x-2 group text-secondary">
-                                   {nav?.icon}
+                                    {nav?.icon}
                                     <span className="group-hover:text-primary">{nav.name}</span>
                                 </div>
                             </NavLink>
                         ))}
-                    </nav>
-                </div>
-                <div className="flex-grow px-5">
-                    <Outlet />
-                </div>
-            </div>
+                    </div>
+                </nav>}
         </div>
     );
 }

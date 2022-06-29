@@ -1,34 +1,29 @@
 import ReactECharts from 'echarts-for-react';
 import React, { useEffect, useState } from 'react';
-import Card from '../components/Card';
+import NoData from './NoData';
 
-function AccumCard() {
-    const [accum, setAccum] = useState(null);
+
+function Chart({ data, onBarClick }) {
+    if (!data) {
+        return (<NoData />)
+    }
 
     const colors = [
         ['#737373', 'bg-chart-2 hover:bg-chart-2-s text-white fill-white'],
         ['#FCD757', 'bg-chart-1 hover:bg-chart-1-s text-black fill-black'],
         ['#E94F37', 'bg-chart-4 hover:bg-chart-4-s text-white fill-white'],
         ['#393E41', 'bg-chart-5 hover:bg-chart-5-s text-white fill-white'],
-        ['#C9B6BE', 'bg-chart-3 hover:bg-chart-3-s text-black fill-black',],
+        ['#C9B6BE', 'bg-chart-3 hover:bg-chart-3-s text-black fill-black'],
     ]
-
-    useEffect(() => {
-        fetch(`/api/dividends/accum`)
-            .then(i => i.json())
-            .then(i => {
-                setAccum(i)
-            })
-    }, [])
 
     let option = {
         textStyle: {
-            color: '#a1a1aa',
+            color: '#a3a3a3',
             fontFamily: 'Rubik, sans-serif',
         },
         xAxis: {
-            type: 'time',
-
+            type: 'category',
+            data: data.map(d => d.label),
             axisLabel: {
                 fontSize: 14,
             }
@@ -45,7 +40,7 @@ function AccumCard() {
                 fontSize: 14
             },
             axisPointer: {
-                type: 'line'
+                type: 'shadow'
             }
         },
         grid: {
@@ -57,26 +52,29 @@ function AccumCard() {
         },
         series: [
             {
-                data: accum?.map(d => [d.date, d.sumToDate]),
-                type: 'line',
+                data: data.map(d => d.value),
+                type: 'bar',
                 color: colors[0],
-                showSymbol: false,
             }
         ]
     };
 
+    let onEvents = {};
+    if (onBarClick) {
+        onEvents = {
+            'click': onBarClick,
+        }
+    }
+
 
     return (
-        <Card title={'Accumulated'} className="col-span-3">
-            {accum &&
-                <ReactECharts
-                    option={option}
-                    notMerge={true}
-                    lazyUpdate={true}
-                />}
-        </Card>
-
+        <ReactECharts
+            option={option}
+            notMerge={true}
+            lazyUpdate={true}
+            onEvents={onEvents}
+        />
     );
 }
 
-export default AccumCard;
+export default Chart;

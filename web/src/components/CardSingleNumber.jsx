@@ -5,8 +5,9 @@ function CardSingleNumber({ title, amount, currency, className }) {
   return (
     <Card title={title} className={className}>
       <p className="text-primary font-bold">
-        <span className="text-3xl">{formatNumberNoFractions(amount) + ' '}</span>
-        <span className="text-sm">{currency}</span>
+        <span className="text-3xl">{formatNumberNoFractions(amount) + (currency ? ' ' + currency : '')}
+        </span>
+
       </p>
     </Card>
   );
