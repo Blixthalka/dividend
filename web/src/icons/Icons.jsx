@@ -22,9 +22,11 @@ import { ReactComponent as MenuSvg } from './svg/menu.svg';
 import { ReactComponent as BarChartSvg } from './svg/bar-chart.svg';
 import { ReactComponent as PieChartSvg } from './svg/pie-chart.svg';
 import { ReactComponent as BarSortedChartSvg } from './svg/bar-sorted-chart.svg';
+import { ReactComponent as CheckSvg } from './svg/check.svg';
 
-
-
+export const CheckIcon = ({ className }) => {
+    return (<CheckSvg className={`${className}`} />)
+}
 
 export const PieChartIcon = ({ className }) => {
     return (<PieChartSvg className={`${className}`} />)
@@ -123,7 +125,6 @@ export const FlagIcon = ({ className, code }) => {
         case "EUR":
             return (<EuSvg className={`${localClassName} ${className}`} />)
         default:
-            console.log("no code " + code);
             return null
     }
 

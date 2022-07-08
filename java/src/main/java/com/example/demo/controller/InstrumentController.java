@@ -3,9 +3,15 @@ package com.example.demo.controller;
 import com.example.demo.controller.dto.*;
 import com.example.demo.data.AvanzaReader;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -24,26 +30,36 @@ public class InstrumentController {
     private final Map<Long, Instrument> instruments = new HashMap<>();
     private final Map<Long, Dividend> dividends = new HashMap<>();
     private final Map<Long, Transaction> transactions = new HashMap<>();
-    private List<PersonalDividend> personalDividends;
+    private List<PersonalDividend> personalDividends = new ArrayList<>();
 
-    @PostMapping("/instruments")
-    public Instrument createInstrument(@RequestBody Instrument instrument) {
-        var id = genId(instruments.keySet());
-        instrument.setId(id);
-        instruments.put(instrument.getId(), instrument);
-        return instrument;
+
+    @GetMapping("/overview")
+    public Overview getOverview() {
+        Optional<Integer> firstYear = personalDividends.stream()
+                .map(PersonalDividend::getDate)
+                .min(Comparator.naturalOrder())
+                .map(LocalDate::getYear);
+
+        return Overview.builder()
+                .firstYear(firstYear.orElse(null))
+                .loaded(firstYear.isPresent())
+                .build();
     }
 
     @GetMapping("/instruments")
-    public List<DividendInstrument> getInstrument(@RequestParam(required = false) Integer year) {
+    public List<DividendInstrument> getInstrument(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false, defaultValue = "desc") SortDirection sortDirection,
+            @RequestParam(required = false, defaultValue = "total_dividends") InstrumentColumn sortColumn
+    ) {
         List<PersonalDividend> personalDividends1 = personalDividends.stream()
                 .filter(d -> {
-                    if(year == null) {
+                    if (year == null) {
                         return true;
                     }
                     return d.getDate().getYear() == year;
                 }).collect(Collectors.toList());
-        return groupBy(personalDividends1, PersonalDividend::getIsin)
+        List<DividendInstrument> list = groupBy(personalDividends1, PersonalDividend::getIsin)
                 .filter(entry -> !entry.getKey().equals("-"))
                 .map(entry -> {
                     BigDecimal total = entry.getValue().stream()
@@ -59,50 +75,69 @@ public class InstrumentController {
                             .totalDividends(total)
                             .build();
                 })
-                .sorted((d1, d2) -> d1.getTotalDividends().compareTo(d2.getTotalDividends()) * -1)
+                .sorted(getSortFunInstrument(sortColumn))
                 .collect(Collectors.toList());
+
+        if (sortDirection == SortDirection.desc) {
+            Collections.reverse(list);
+        }
+        return list;
     }
 
-    @GetMapping("/instruments/{instrumentId}")
-    public Instrument getInstrument(@PathVariable Long instrumentId) {
-        return instruments.get(instrumentId);
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+        log.info("asdf {}", file.getOriginalFilename());
+        try {
+            //Thread.sleep(2000);
+            personalDividends = reader.read(file.getInputStream());
+        } catch (IOException e) {
+            log.error("error ", e);
+            return ResponseEntity.status(400)
+                    .body("test");
+        }
+        return ResponseEntity.status(200)
+                .body("test");
     }
 
+    private Comparator<DividendInstrument> getSortFunInstrument(InstrumentColumn column) {
+        switch (column) {
+            case name:
+                return Comparator.comparing(DividendInstrument::getName, String.CASE_INSENSITIVE_ORDER);
+            case isin:
+                return Comparator.comparing(DividendInstrument::getIsin, String.CASE_INSENSITIVE_ORDER);
+            case total_dividends:
+                return Comparator.comparing(DividendInstrument::getTotalDividends);
+            default:
+                throw new RuntimeException("Could not find sort fun " + column);
+        }
+    }
 
-    @GetMapping("/instruments/{instrumentId}/dividends")
-    public List<Dividend> getDividends(@PathVariable Long instrumentId) {
-        return dividends.values().stream()
-                .filter(d -> d.getInstrumentId().equals(instrumentId))
+    private enum InstrumentColumn {
+        name,
+        isin,
+        total_dividends
+    }
+
+    @GetMapping("/instruments/{isin}")
+    public Object getInstrumentByIsin(@PathVariable String isin) {
+        List<PersonalDividend> dividends = groupBy(personalDividends, PersonalDividend::getIsin)
+                .filter(entry -> entry.getKey().equals(isin))
+                .flatMap(entry -> entry.getValue().stream())
                 .collect(Collectors.toList());
-    }
 
-    @GetMapping("/instruments/{instrumentId}/dividends/{dividendId}")
-    public Dividend getDividend(@PathVariable Long instrumentId, @PathVariable Long dividendId) {
-        return dividends.get(dividendId);
-    }
+        PersonalDividend first = dividends.stream()
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-    @PostMapping("/transactions")
-    public Transaction createTransaction(@RequestBody Transaction transaction) {
-        var id = genId(transactions.keySet());
-        transaction.setId(id);
-        transactions.put(transaction.getId(), transaction);
-        return transaction;
-    }
+        BigDecimal totalDividends = dividends.stream()
+                .map(PersonalDividend::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-    @GetMapping("/load")
-    public void createTransaction() {
-        personalDividends = reader.read();
-    }
-
-    @GetMapping("/positions")
-    public Collection<Position> getPositions() {
-        return groupBy(transactions.values(), Transaction::getInstrumentId)
-                .map(entry -> {
-                    Long instrumentId = entry.getKey();
-                    BigDecimal quantity = calculatePositionForDate(entry.getValue(), LocalDate.now());
-                    return new Position(instruments.get(instrumentId), quantity);
-                })
-                .collect(Collectors.toList());
+        return com.example.demo.controller.dto.Instrument.builder()
+                .isin(first.getIsin())
+                .name(first.getInstrumentName())
+                .totalDividends(totalDividends)
+                .build();
     }
 
     @GetMapping("/dividends/year/{year}")
@@ -139,7 +174,7 @@ public class InstrumentController {
                 .collect(Collectors.toList());
 
         BigDecimal sum = BigDecimal.ZERO;
-        for (AccumElement accum: groupedByDate) {
+        for (AccumElement accum : groupedByDate) {
             BigDecimal v = sum.add(accum.getSumToDate());
             accums.add(new AccumElement(accum.getDate(), v.setScale(0, RoundingMode.HALF_UP)));
             sum = v;
@@ -152,16 +187,24 @@ public class InstrumentController {
 
 
     @GetMapping("/dividends/year")
-    public YearData yearData() {
+    public YearData yearData(@RequestParam(required = false) String isin) {
         ArrayList<Year> years = new ArrayList<>();
 
-        int minYear = personalDividends.stream()
+        List<PersonalDividend> base = personalDividends.stream()
+                .filter(d -> {
+                    if (isin == null) {
+                        return true;
+                    }
+                    return d.getIsin().equals(isin);
+                })
+                .collect(Collectors.toList());
+        int minYear = base.stream()
                 .map(PersonalDividend::getDate)
                 .mapToInt(LocalDate::getYear)
                 .min()
                 .orElseThrow();
 
-        Map<Integer, List<PersonalDividend>> yearDividends = groupBy(personalDividends, d -> d.getDate().getYear())
+        Map<Integer, List<PersonalDividend>> yearDividends = groupBy(base, d -> d.getDate().getYear())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         for (int year = minYear; year <= LocalDate.now().getYear(); year++) {
@@ -179,7 +222,6 @@ public class InstrumentController {
 
     @GetMapping(value = {"/dashboard", "/dashboard/{year}"})
     public DashboardData getDashboardData(@PathVariable(required = false) Integer year) {
-
         int currentYear;
 
         if (year == null) {
@@ -199,31 +241,31 @@ public class InstrumentController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(0, RoundingMode.HALF_UP);
 
-        BigDecimal monthly = thisYear
-                .divide(getMonths(currentYear), 0, RoundingMode.HALF_UP);
-
-        BigDecimal number = personalDividends.stream()
-                .filter(dividend -> dividend.getDate().getYear() == currentYear)
-                .map(t -> BigDecimal.ONE)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
+        BigDecimal monthly = null;
+        BigDecimal number = null;
+        BigDecimal rolling = null;
+        if (year != null) {
+            number = personalDividends.stream()
+                    .filter(dividend -> dividend.getDate().getYear() == year)
+                    .map(t -> BigDecimal.ONE)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            monthly = thisYear.divide(BigDecimal.valueOf(12), 0, RoundingMode.HALF_UP);
+        } else {
+            rolling = personalDividends.stream()
+                    .filter(dividend -> dividend.getDate().isAfter(LocalDate.now().minusYears(1)))
+                    .map(PersonalDividend::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .setScale(0, RoundingMode.HALF_UP);
+        }
         return DashboardData.builder()
                 .dividends(personalDividends)
                 .dividendsThisYear(thisYear)
                 .totalDividends(total)
                 .monthlyDividends(monthly)
                 .numberOfDividends(number)
+                .rolling(rolling)
                 .build();
     }
-
-    public BigDecimal getMonths(int year) {
-        if (year == LocalDate.now().getYear()) {
-            return BigDecimal.valueOf(LocalDate.now().getMonth().getValue());
-        } else {
-            return new BigDecimal("12");
-        }
-    }
-
 
     private BigDecimal getSumForMonth(int i, int year) {
         return personalDividends.stream()
@@ -254,7 +296,8 @@ public class InstrumentController {
     public List<PersonalDividend> getTransactions(
             @RequestParam(required = false, defaultValue = "asc") SortDirection sortDirection,
             @RequestParam(required = false, defaultValue = "date") DividendColumn sortColumn,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer year
     ) {
         List<PersonalDividend> list = personalDividends.stream()
                 .peek(d -> {
@@ -262,7 +305,7 @@ public class InstrumentController {
                     d.setAmount(d.amount.setScale(2, RoundingMode.HALF_UP));
                 })
                 .filter(d -> {
-                    if (search == null ) {
+                    if (search == null) {
                         return true;
                     }
                     String trimmedSearch = search.trim().toLowerCase();
@@ -271,6 +314,12 @@ public class InstrumentController {
                     }
                     return d.getInstrumentName().toLowerCase().contains(trimmedSearch) || d.getIsin().toLowerCase().equals(trimmedSearch);
                 })
+                .filter(d -> {
+                    if (year == null) {
+                        return true;
+                    }
+                    return d.getDate().getYear() == year;
+                })
                 .sorted(getSortFun(sortColumn))
                 .collect(Collectors.toList());
         if (sortDirection == SortDirection.desc) {
@@ -278,6 +327,7 @@ public class InstrumentController {
         }
         return list;
     }
+
 
     private Comparator<PersonalDividend> getSortFun(DividendColumn column) {
         switch (column) {
@@ -300,6 +350,7 @@ public class InstrumentController {
         date,
         amount
     }
+
     private enum SortDirection {
         asc,
         desc

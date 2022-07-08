@@ -5,7 +5,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 public class AvanzaReader {
 
 
-    public List<PersonalDividend> read() {
-        //File file = new File("/Users/emil/Downloads/transaktioner_2017-01-01_2022-05-16.csv");
-        File file = new File("/Users/emil/Downloads/transaktioner_2004-01-30_2022-03-01.csv");
+    public List<PersonalDividend> read(InputStream inputStream) throws IOException {
+        //File file = new File("/Users/emil/Downloads/transaktioner_2017-01-01_2022-07-01.csv");
+        //File file = new File("/Users/emil/Downloads/transaktioner_2004-01-30_2022-03-01.csv");
         //File file = new File("/Users/emil/Downloads/transaktioner_2017-01-01_2022-03-03.csv");
-        return readCsvFile(file).stream()
+        return readCsvFile(inputStream).stream()
                 .filter(line -> line.get("Typ av transaktion").equals("Utdelning"))
                 .map(line -> {
                     log.info("{}", line);
@@ -43,21 +43,34 @@ public class AvanzaReader {
         return new BigDecimal(line.get(header).replace(",", "."));
     }
 
-    @SneakyThrows
-    private List<Map<String, String>> readCsvFile(File file) {
-        List<String> lines = Files.readAllLines(file.getAbsoluteFile().toPath(), StandardCharsets.UTF_8);
-        List<String> header = split(lines.get(0));
+    private List<Map<String, String>> readCsvFile(InputStream inputStream) throws IOException {
+        List<String> lines = readLines(inputStream);
+        List<String> header = split(lines.get(0)).stream()
+                .map(h -> h.trim().replace("\uFEFF", ""))
+                .collect(Collectors.toList());
+        if (!header.get(0).equals("Datum")) {
+            throw new IOException("Does not start with correct header got='" + header.get(0) +"' wanted 'Datum'");
+        }
         lines.remove(0);
         return lines.stream()
                 .map(line -> {
                     List<String> columns = split(line);
                     HashMap<String, String> headerToColumnValue = new HashMap<>();
                     for (int i = 0; i < header.size(); i++) {
-                        headerToColumnValue.put(header.get(i).trim().replace("\uFEFF", ""), columns.get(i).trim());
+                        headerToColumnValue.put(header.get(i), columns.get(i).trim());
                     }
                     return headerToColumnValue;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private List<String> readLines(InputStream inputStream) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        ArrayList<String> lines = new ArrayList<>();
+        while (reader.ready()) {
+            lines.add(new String(reader.readLine().getBytes(StandardCharsets.UTF_8)));
+        }
+        return lines;
     }
 
     private List<String> split(String s) {

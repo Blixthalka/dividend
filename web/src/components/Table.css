@@ -5,7 +5,11 @@
 }
 
 .dividends-table th {
-    @apply text-sm font-normal bg-neutral-100 text-primary p-3 text-left cursor-pointer border border-neutral-300;
+    @apply text-sm font-normal bg-neutral-50 text-primary p-3 text-left  border border-neutral-300;
+}
+
+.dividends-table th.header-sortable {
+    @apply cursor-pointer;
 }
 
 .dividends-table .number {
@@ -18,7 +22,7 @@
 }
 
 .dividends-table td {
-    @apply text-neutral-500 text-sm px-3 py-1 border border-neutral-300;
+    @apply text-primary text-sm px-3 py-1 border border-neutral-300 rounded;
 }
 
 .dividends-table .empty-td {
@@ -29,18 +33,23 @@
     @apply w-full;
 }
 
-.dividends-table tbody {
-    @apply border-b border-r border-l border-neutral-300;
+.dividends-table tr {
+    @apply rounded;
 }
 
-.dividends-table thead {
-    @apply border-t border-r border-l border-neutral-300;
+.dividends-table tr:nth-child(even) {
+    @apply bg-neutral-50;
 }
 
-.dividends-table tbody tr:nth-child(even) {
-    @apply bg-neutral-100;
+.dividends-table tr:nth-child(odd) {
+    @apply bg-white;
+}
+
+.dividends-table tr.clickable-row  {
+    @apply hover:bg-neutral-100 cursor-pointer;
 }
 
 .dividends-table .header-highlight {
-    @apply bg-neutral-200 ;
+    @apply bg-neutral-100 ;
 }
+

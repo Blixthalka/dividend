@@ -48,13 +48,13 @@ const IntrumentCard = ({ numberOfInstruments, year }) => {
     }, [year, sorting])
 
     return (
-        <Card title={numberOfInstruments === 0 ? "Instruments" : "Best Instruments"} className="grid gap-2 col-span-3">
-           <Table
-                    headers={headers}
-                    sorting={sorting}
-                    dataList={instruments}
-                    onSortChange={(s) => setSorting(s)}
-                />
+        <Card title={numberOfInstruments === 0 ? "Instruments" : "Best Instruments"} className="grid gap-2 ">
+            <Table
+                headers={headers}
+                sorting={sorting}
+                dataList={instruments}
+                onSortChange={(s) => setSorting(s)}
+            />
         </Card>
 
     );

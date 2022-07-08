@@ -1,8 +1,9 @@
 import ReactECharts from 'echarts-for-react';
 import React, { useEffect, useState } from 'react';
 import Card from '../components/Card';
+import NoData from './NoData';
 
-function AccumCard() {
+function AccumCard({ className }) {
     const [accum, setAccum] = useState(null);
 
     const colors = [
@@ -20,6 +21,14 @@ function AccumCard() {
                 setAccum(i)
             })
     }, [])
+
+    if (!accum || accum.length == 1) {
+        return (
+            <Card>
+                <NoData />
+            </Card>
+        )
+    }
 
     let option = {
         textStyle: {
@@ -67,7 +76,7 @@ function AccumCard() {
 
 
     return (
-        <Card title={'Accumulated'} className="col-span-3">
+        <Card title={'Accumulated'} className={`${className}`}>
             {accum &&
                 <ReactECharts
                     option={option}

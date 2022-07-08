@@ -5,7 +5,7 @@ import { BarChartIcon, BarSortedChartIcon } from '../icons/Icons';
 import ButtonIcon from './ButtonIcon';
 
 
-function DividendMonthCard({ year }) {
+function DividendMonthCard({ year, className }) {
     const [yearData, setYearData] = useState(undefined);
     const [biggestSort, setBiggestSort] = useState(false)
 
@@ -22,7 +22,7 @@ function DividendMonthCard({ year }) {
     let data = yearData ? yearData
         .sort(function (a, b) {
             if (biggestSort) {
-                return b.dividends - a.dividends;
+                return a.dividends - b.dividends;
             } else {
                 return a.monthOfYear - b.monthOfYear;
             }
@@ -38,7 +38,7 @@ function DividendMonthCard({ year }) {
     return (
         <Card
             title={'Monthly'}
-            className="col-span-3"
+            className={`${className}`}
             headerComponent={
                 <ButtonIcon Icon={biggestSort ? BarChartIcon : BarSortedChartIcon} onClick={(e) => {
                     setBiggestSort(!biggestSort)

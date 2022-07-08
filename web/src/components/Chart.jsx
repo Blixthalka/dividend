@@ -4,7 +4,7 @@ import NoData from './NoData';
 
 
 function Chart({ data, onBarClick }) {
-    if (!data) {
+    if (!data || data.length === 0) {
         return (<NoData />)
     }
 
@@ -26,6 +26,7 @@ function Chart({ data, onBarClick }) {
             data: data.map(d => d.label),
             axisLabel: {
                 fontSize: 14,
+                rotate: data.length > 12 ? 70 : 0,
             }
         },
         yAxis: {
@@ -41,7 +42,17 @@ function Chart({ data, onBarClick }) {
             },
             axisPointer: {
                 type: 'shadow'
-            }
+            },
+            formatter: (args) => {
+                let tooltip = `<p>${args[0].name}</p> `;
+
+                args.forEach(({ marker, value }) => {
+                      value = value || [0, 0];
+                      tooltip += `<p>${marker} <strong>${value} kr</strong></p>`;
+                });
+
+                return tooltip;
+           }
         },
         grid: {
             left: '1%',
@@ -52,9 +63,20 @@ function Chart({ data, onBarClick }) {
         },
         series: [
             {
-                data: data.map(d => d.value),
+                data: data.map(d => {
+                    return {
+                        name: d?.name,
+                        value: d.value,
+                        id: d?.id
+                    }
+                }),
                 type: 'bar',
                 color: colors[0],
+                emphasis: {
+                    itemStyle: {
+                        shadowColor: '#404040'
+                    }
+                }
             }
         ]
     };

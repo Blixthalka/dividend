@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Table.css';
 import { ChevronDownIcon, ChevronUpIcon } from '../icons/Icons';
 
-function Table({headers, sorting, onSortChange, dataList, className}) {
+function Table({ headers, sorting, onSortChange, dataList, className, sortable = true }) {
 
     const headerClick = (headerName) => {
         if (sorting.column === headerName) {
@@ -25,6 +25,10 @@ function Table({headers, sorting, onSortChange, dataList, className}) {
         }
     }
 
+    const getHeaderSortname = (header) => {
+        return header?.sortName ? header.sortName : header.name;
+    }
+
     return (
         <table className={`dividends-table ${className}`}>
             <thead>
@@ -32,13 +36,14 @@ function Table({headers, sorting, onSortChange, dataList, className}) {
                     {headers.map((header) => (
                         <th
                             className={`
-                                        ${header?.name === sorting.column && 'header-highlight'}
+                                        ${getHeaderSortname(header) === sorting.column && 'header-highlight'}
+                                        ${sortable && 'header-sortable'}
                                     `}
-                            onClick={(e) => headerClick(header?.name)}
+                            onClick={(e) => headerClick(getHeaderSortname(header))}
                         >
                             <div className="flex justify-between">
-                                <span>{header?.name}</span>
-                                {header?.name === sorting.column &&
+                                <span>{header.name}</span>
+                                {(sortable && getHeaderSortname(header) === sorting.column) &&
                                     <span>
                                         {sorting.direction === "desc" ?
                                             <ChevronDownIcon className="h-4 w-4 ml-2 fill-primary" /> :
@@ -51,12 +56,15 @@ function Table({headers, sorting, onSortChange, dataList, className}) {
             </thead>
             <tbody>
                 {dataList.map((element) => (
-                    <tr className="text-primary text-sm">
+                    <tr
+                        className={`text-primary text-sm ${element?.onRowClick && "clickable-row"}`}
+                        onClick={element?.onRowClick}
+                    >
                         {headers.map((header) => (
                             <td
                                 className={`
-                                        ${header?.type === 'number' && 'number'}
-                                        ${header?.type === 'text' && 'text'}
+                                        ${header.type === 'number' && 'number'}
+                                        ${header.type === 'text' && 'text'}
                                     `}
                             >{header.f(element)}</td>
                         ))}
@@ -64,7 +72,7 @@ function Table({headers, sorting, onSortChange, dataList, className}) {
                 ))}
                 {dataList.length === 0 && (
                     <tr>
-                        <td className="empty-td text-primary" colspan={`${headers.length}`}>huh, nothing here</td>
+                        <td className="empty-td text-primary" colSpan={`${headers.length}`}>huh, nothing here</td>
                     </tr>
                 )}
             </tbody>

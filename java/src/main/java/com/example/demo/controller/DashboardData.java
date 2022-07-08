@@ -15,4 +15,5 @@ public class DashboardData {
     BigDecimal dividendsThisYear;
     BigDecimal monthlyDividends;
     BigDecimal numberOfDividends;
+    BigDecimal rolling;
 }

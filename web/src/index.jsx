@@ -14,24 +14,28 @@ import {
 } from "react-router-dom";
 import Upload from './routes/Upload';
 import DashboardYear from './routes/DashboardYear';
+import Login from './routes/Login';
 
 
 ReactDOM.render(
   <React.StrictMode>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} >
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard/:year" element={<DashboardYear />} />
-            <Route path="instruments">
-              <Route index element={<Instruments />} />
-              <Route path=":instrumentId" element={<Instrument />} />
-            </Route>
-            <Route path="dividends" element={<Dividends />} />
-            <Route path="upload" element={<Upload />} />
+    <BrowserRouter>
+      <Routes>
+        <Route path="login" element={<Login />} />
+        <Route path="/" element={<App />} >
+          <Route index element={<Dashboard />} />
+
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="dashboard/:year" element={<DashboardYear />} />
+          <Route path="instruments">
+            <Route index element={<Instruments />} />
+            <Route path=":isin" element={<Instrument />} />
           </Route>
-        </Routes>
-      </BrowserRouter>
+          <Route path="dividends" element={<Dividends />} />
+          <Route path="upload" element={<Upload />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   </React.StrictMode>,
   document.getElementById('root')
 );
